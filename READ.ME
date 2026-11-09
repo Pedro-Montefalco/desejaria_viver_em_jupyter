@@ -1,0 +1,79 @@
+# Dataset da luva: extração de frames
+
+Esta pasta guarda os vídeos de gestos feitos com a luva cinza da CBR e o script que tira frames deles para montar o dataset de treino do YOLO.
+
+## Estrutura
+
+```
+~/dataset_luva/
+├── README.md       <- este arquivo
+├── extrair.py      <- script que extrai os frames
+├── videos/         <- vídeos de entrada (você coloca aqui)
+└── frames/         <- imagens de saída (o script cria e preenche)
+```
+
+## Como usar
+
+1. Grave os vídeos e copie para `videos/`.
+2. Nomeie cada vídeo com o gesto e um número, por exemplo `pouso_01.mp4` ou `girar_esq_01.mp4`. O nome do vídeo vira o prefixo dos frames, então dá para saber de qual vídeo cada imagem veio.
+3. Rode o script de dentro desta pasta:
+
+```bash
+cd ~/dataset_luva
+python3 extrair.py
+```
+
+4. As imagens aparecem em `frames/`, com nomes como `pouso_01_0000.jpg`, `pouso_01_0001.jpg`.
+5. Para conferir quantos frames saíram:
+
+```bash
+ls frames | wc -l
+```
+
+## Configurações do script
+
+No começo do `extrair.py` há variáveis que podem ser ajustadas:
+
+| Variável | O que faz | Valor sugerido |
+|----------|-----------|----------------|
+| `VIDEOS_DIR` | pasta dos vídeos | `videos` |
+| `OUTPUT_DIR` | pasta de saída | `frames` |
+| `INTERVAL` | segundos entre frames salvos | `0.4` |
+| `LARGURA` | largura final em pixels (`None` mantém a original) | `640` |
+| `QUALIDADE` | qualidade do JPEG | `90` |
+| `FLIP` | espelha a imagem | `False` |
+
+Atenção ao `FLIP`: espelhar troca mão esquerda por direita e pode mudar o significado de um gesto. Só use se a câmera que grava sai espelhada.
+
+## Dicas para gravar
+
+- Varie fundo, luz (sala, sol, sombra), distância e ângulo da mão.
+- Grave com a mão esquerda e com a direita.
+- Se possível, grave com a mesma câmera que vai no drone (RealSense), na mesma resolução.
+- Inclua quadros sem gesto (mão parada, sem luva, fundo vazio) para o modelo aprender a não disparar comando à toa.
+- Se der, grave outras pessoas usando a luva.
+
+## Separação treino e validação
+
+Separe por **vídeo**, não por frame. Frames do mesmo vídeo são quase iguais, e se ficarem nos dois lados a validação parece ótima sem estar.
+
+## Estrutura que o YOLO espera
+
+```
+dataset/
+├── images/train/    images/val/
+├── labels/train/    labels/val/
+└── data.yaml
+```
+
+## GitHub
+
+- Limite de 100 MB por arquivo, e muitas imagens deixam o repositório pesado.
+- Use um repositório separado para o dataset, não o `cbr-2026`.
+- Para milhares de imagens, use Git LFS, ou guarde o dataset em outro lugar (Roboflow, Hugging Face, Drive) e deixe no GitHub só o `data.yaml` e o link.
+- O rosto aparece nos frames. Se o repositório for público, corte a imagem ou deixe privado.
+
+## Observações
+
+- O script deve ser rodado de dentro de `~/dataset_luva`, porque procura `videos` e `frames` na pasta atual.
+- Rodar de novo com os mesmos vídeos sobrescreve os frames (os nomes se repetem). Para recomeçar do zero, apague o conteúdo de `frames/`.

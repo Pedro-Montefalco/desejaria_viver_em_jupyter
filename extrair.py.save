@@ -1,0 +1,46 @@
+import cv2
+import os
+from pathlib import Path
+
+VIDEOS_DIR = "videos"         # pasta com os vídeos
+OUTPUT_DIR = "frames"         # pasta de saída (criada se não existir)
+INTERVAL = 0.6                # segundos entre frames salvos
+LARGURA = 640                 # largura final (None para manter original)
+QUALIDADE = 90                # qualidade do JPEG
+FLIP = False                  # só True se a câmera grava espelhada
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+for caminho in sorted(Path(VIDEOS_DIR).glob("*")):
+    if caminho.suffix.lower() not in (".mp4", ".mov", ".avi", ".mkv"):
+        continu
+
+    video = cv2.VideoCapture(str(caminho))
+    if not video.isOpened():
+        print(f"Erro ao abrir {caminho.name}, pulando.")
+        continue
+
+    fps = video.get(cv2.CAP_PROP_FPS) or 30
+    passo = max(1, round(fps * INTERVAL))   # a cada quantos frames salvar
+
+    i = 0
+    salvos = 0
+    while True:
+        ok, frame = video.read()
+        if not ok:
+            break
+
+        if i % passo == 0:
+            if FLIP:
+                frame = cv2.flip(frame, 1)
+            if LARGURA:
+                h, w = frame.shape[:2]
+                frame = cv2.resize(frame, (LARGURA, round(h * LARGURA / w)))
+            nome = f"{caminho.stem}_{salvos:04d}.jpg"
+            cv2.imwrite(os.path.join(OUTPUT_DIR, nome), frame,
+                        [cv2.IMWRITE_JPEG_QUALITY, QUALIDADE])
+            salvos += 1
+        i += 1
+
+    video.release()
+    print(f"{caminho.name}: {salvos} imagens salvas.")
